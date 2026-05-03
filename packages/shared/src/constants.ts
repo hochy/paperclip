@@ -663,6 +663,7 @@ export const PLUGIN_CAPABILITIES = [
   "secrets.read-ref",
   "secrets.write",
   "environment.drivers.register",
+  "run.gate",
   // Agent Tools
   "agent.tools.register",
   // Cross-plugin peer reads

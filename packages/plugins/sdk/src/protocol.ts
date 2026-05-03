@@ -520,6 +520,10 @@ export interface HostToWorkerMethods {
     params: PluginEnvironmentExecuteParams,
     result: PluginEnvironmentExecuteResult,
   ];
+  beforeRun: [
+    params: import("./types.js").BeforeRunParams,
+    result: import("./types.js").BeforeRunResult,
+  ];
 }
 
 /** Union of all host→worker method names. */
@@ -551,6 +555,7 @@ export const HOST_TO_WORKER_OPTIONAL_METHODS: readonly HostToWorkerMethodName[] 
   "environmentDestroyLease",
   "environmentRealizeWorkspace",
   "environmentExecute",
+  "beforeRun",
 ] as const;
 
 // ---------------------------------------------------------------------------
@@ -1064,6 +1069,9 @@ export interface WorkerToHostMethods {
     },
     result: Goal,
   ];
+
+  // Run gate (WS-1)
+  "runs.registerBeforeRunHandler": [params: Record<string, never>, result: void];
 }
 
 /** Union of all worker→host method names. */
