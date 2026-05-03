@@ -13,7 +13,14 @@ import { validate } from "../middleware/validate.js";
 import { heartbeatService, instanceSettingsService, logActivity, secretService } from "../services/index.js";
 import { assertBoardOrgAccess, getActorInfo } from "./authz.js";
 import { logger } from "../middleware/logger.js";
+import type { PluginCgroupManager } from "../services/plugin-cgroup-manager.js";
 import type { PluginWorkerManager } from "../services/plugin-worker-manager.js";
+
+export interface InstanceSettingsRoutesOptions {
+  cgroupManager?: PluginCgroupManager;
+  pluginWorkerManager?: PluginWorkerManager;
+  schedulerHeartbeat?: ReturnType<typeof heartbeatService>;
+}
 
 function assertCanManageInstanceSettings(req: Request) {
   if (req.actor.type !== "board") {
@@ -25,13 +32,7 @@ function assertCanManageInstanceSettings(req: Request) {
   throw forbidden("Instance admin access required");
 }
 
-export function instanceSettingsRoutes(
-  db: Db,
-  options: {
-    pluginWorkerManager?: PluginWorkerManager;
-    schedulerHeartbeat?: ReturnType<typeof heartbeatService>;
-  } = {},
-) {
+export function instanceSettingsRoutes(db: Db, options: InstanceSettingsRoutesOptions = {}) {
   const router = Router();
   const svc = instanceSettingsService(db);
   const secrets = secretService(db);
@@ -80,11 +81,25 @@ export function instanceSettingsRoutes(
     // Experimental settings are readable by any authenticated org member
     // or instance admin. Only PATCH requires instance-admin.
     assertBoardOrgAccess(req);
-    res.json(await svc.getExperimental());
+    const [experimental, pluginCgroupActive] = await Promise.all([
+      svc.getExperimental(),
+      options.cgroupManager ? options.cgroupManager.isSupported() : Promise.resolve(false),
+    ]);
+    res.json({ ...experimental, pluginCgroupActive });
   });
 
   router.patch(
     "/instance/settings/experimental",
+    (req, _res, next) => {
+      // pluginCgroupActive is a runtime-only field injected by GET — strip it
+      // before schema validation so a client round-tripping GET→PATCH doesn't
+      // get rejected by the strict schema.
+      if (req.body && typeof req.body === "object") {
+        const { pluginCgroupActive: _, ...rest } = req.body as Record<string, unknown>;
+        req.body = rest;
+      }
+      next();
+    },
     validate(patchInstanceExperimentalSettingsSchema),
     async (req, res) => {
       assertCanManageInstanceSettings(req);

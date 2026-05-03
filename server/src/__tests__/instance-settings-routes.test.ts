@@ -127,6 +127,7 @@ describe("instance settings routes", () => {
       autoRestartDevServerWhenIdle: false,
       enableIssueGraphLivenessAutoRecovery: true,
       issueGraphLivenessAutoRecoveryLookbackHours: 24,
+      pluginCgroupActive: false,
     });
 
     const patchRes = await request(app)

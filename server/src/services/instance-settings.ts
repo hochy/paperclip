@@ -63,6 +63,8 @@ function normalizeExperimentalSettings(raw: unknown): InstanceExperimentalSettin
       issueGraphLivenessAutoRecoveryLookbackHours:
         parsed.data.issueGraphLivenessAutoRecoveryLookbackHours ??
         DEFAULT_ISSUE_GRAPH_LIVENESS_AUTO_RECOVERY_LOOKBACK_HOURS,
+      pluginCgroupDefaults: parsed.data.pluginCgroupDefaults ?? {},
+      pluginCgroupOverrides: parsed.data.pluginCgroupOverrides ?? {},
     };
   }
   return {
@@ -72,6 +74,8 @@ function normalizeExperimentalSettings(raw: unknown): InstanceExperimentalSettin
     enableIssueGraphLivenessAutoRecovery: false,
     issueGraphLivenessAutoRecoveryLookbackHours:
       DEFAULT_ISSUE_GRAPH_LIVENESS_AUTO_RECOVERY_LOOKBACK_HOURS,
+    pluginCgroupDefaults: {},
+    pluginCgroupOverrides: {},
   };
 }
 

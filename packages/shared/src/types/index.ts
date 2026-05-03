@@ -32,6 +32,7 @@ export type {
   RecoveryProtectionSettings,
   IssueGraphLivenessAutoRecoveryPreview,
   IssueGraphLivenessAutoRecoveryPreviewItem,
+  PluginCgroupLimits,
 } from "./instance.js";
 export {
   DAILY_RETENTION_PRESETS,
