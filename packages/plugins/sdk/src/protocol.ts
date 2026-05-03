@@ -1086,6 +1086,12 @@ export interface WorkerToHostMethods {
 
   // Run gate (WS-1)
   "runs.registerBeforeRunHandler": [params: Record<string, never>, result: void];
+
+  // Host URL discovery
+  "host.getReachableUrl": [
+    params: { pathname: string },
+    result: { url: string; reason?: never } | { url: null; reason: string },
+  ];
 }
 
 /** Union of all worker→host method names. */

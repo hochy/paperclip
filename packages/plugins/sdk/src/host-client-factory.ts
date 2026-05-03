@@ -248,6 +248,11 @@ export interface HostServices {
       params: WorkerToHostMethods["runs.registerBeforeRunHandler"][0],
     ): Promise<WorkerToHostMethods["runs.registerBeforeRunHandler"][1]>;
   };
+
+  /** Provides `host.getReachableUrl`. Requires `host.urls.discover` capability. Optional — only needed when the plugin declares this capability. */
+  host?: {
+    getReachableUrl(params: WorkerToHostMethods["host.getReachableUrl"][0]): Promise<WorkerToHostMethods["host.getReachableUrl"][1]>;
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -422,6 +427,9 @@ const METHOD_CAPABILITY_MAP: Record<WorkerToHostMethodName, PluginCapability | n
   "goals.update": "goals.update",
   // Runs gate
   "runs.registerBeforeRunHandler": "run.gate",
+
+  // Host URL discovery
+  "host.getReachableUrl": "host.urls.discover",
 };
 
 // ---------------------------------------------------------------------------
@@ -741,6 +749,12 @@ export function createHostClientHandlers(
     }),
     "runs.registerBeforeRunHandler": gated("runs.registerBeforeRunHandler", async (params) => {
       return services.runs.registerBeforeRunHandler(params);
+    }),
+
+    // Host URL discovery
+    "host.getReachableUrl": gated("host.getReachableUrl", async (params) => {
+      if (!services.host) throw new Error("host service not provided");
+      return services.host.getReachableUrl(params);
     }),
   };
 }
