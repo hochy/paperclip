@@ -568,6 +568,13 @@
       "when": 1777714971078,
       "tag": "0080_issue_custom_fields",
       "breakpoints": true
+    },
+    {
+      "idx": 81,
+      "version": "7",
+      "when": 1777743980077,
+      "tag": "0081_approvals_source_plugin_columns",
+      "breakpoints": true
     }
   ]
 }
