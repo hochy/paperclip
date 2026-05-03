@@ -10,7 +10,7 @@ import { z } from "zod";
 import { eq, count } from "drizzle-orm";
 import { forbidden } from "../errors.js";
 import { validate } from "../middleware/validate.js";
-import { heartbeatService, instanceSettingsService, logActivity } from "../services/index.js";
+import { heartbeatService, instanceSettingsService, logActivity, secretService } from "../services/index.js";
 import { assertBoardOrgAccess, getActorInfo } from "./authz.js";
 import { logger } from "../middleware/logger.js";
 import type { PluginWorkerManager } from "../services/plugin-worker-manager.js";
@@ -34,6 +34,7 @@ export function instanceSettingsRoutes(
 ) {
   const router = Router();
   const svc = instanceSettingsService(db);
+  const secrets = secretService(db);
   const heartbeat = options.schedulerHeartbeat ?? heartbeatService(db, {
     pluginWorkerManager: options.pluginWorkerManager,
   });
@@ -238,6 +239,12 @@ export function instanceSettingsRoutes(
       res.json(result);
     },
   );
+
+  router.get("/instance/secrets/plugin", async (req, res) => {
+    assertCanManageInstanceSettings(req);
+    const rows = await secrets.listPluginOwned();
+    res.json(rows);
+  });
 
   return router;
 }

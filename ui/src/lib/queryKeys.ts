@@ -127,6 +127,7 @@ export const queryKeys = {
     adminStatus: ["instance", "admin-status"] as const,
     agentQueuedCounts: ["instance", "agent-queued-counts"] as const,
     allAgents: ["instance", "all-agents"] as const,
+    pluginSecrets: ["instance", "plugin-secrets"] as const,
   },
   health: ["health"] as const,
   secrets: {

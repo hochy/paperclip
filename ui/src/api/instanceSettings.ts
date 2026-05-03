@@ -1,4 +1,5 @@
 import type {
+  CompanySecret,
   InstanceExperimentalSettings,
   InstanceGeneralSettings,
   IssueGraphLivenessAutoRecoveryPreview,
@@ -22,6 +23,8 @@ export interface AgentQueuedCount {
 export const instanceSettingsApi = {
   getGeneral: () =>
     api.get<InstanceGeneralSettings>("/instance/settings/general"),
+  listPluginSecrets: () =>
+    api.get<CompanySecret[]>("/instance/secrets/plugin"),
   updateGeneral: (patch: PatchInstanceGeneralSettings) =>
     api.patch<InstanceGeneralSettings>("/instance/settings/general", patch),
   getExperimental: () =>
