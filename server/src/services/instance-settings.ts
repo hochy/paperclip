@@ -18,6 +18,15 @@ import { eq, sql } from "drizzle-orm";
 
 const DEFAULT_SINGLETON_KEY = "default";
 
+const DEFAULT_CONTAINER_ENGINE_SETTINGS: InstanceGeneralSettings["containerEngine"] = {
+  driver: "disabled",
+  networkMode: "none",
+  allowRootUser: false,
+  memoryMbMax: 4096,
+  maxLifetimeSecMax: 86400,
+  concurrencyPerPlugin: 10,
+};
+
 function normalizeGeneralSettings(raw: unknown): InstanceGeneralSettings {
   const parsed = instanceGeneralSettingsSchema.safeParse(raw ?? {});
   if (parsed.success) {
@@ -29,6 +38,7 @@ function normalizeGeneralSettings(raw: unknown): InstanceGeneralSettings {
       backupRetention: parsed.data.backupRetention ?? DEFAULT_BACKUP_RETENTION,
       runaway: parsed.data.runaway ?? DEFAULT_RUNAWAY_SETTINGS,
       recoveryProtection: parsed.data.recoveryProtection ?? DEFAULT_RECOVERY_PROTECTION_SETTINGS,
+      containerEngine: parsed.data.containerEngine ?? DEFAULT_CONTAINER_ENGINE_SETTINGS,
     };
   }
   return {
@@ -38,6 +48,7 @@ function normalizeGeneralSettings(raw: unknown): InstanceGeneralSettings {
     backupRetention: DEFAULT_BACKUP_RETENTION,
     runaway: DEFAULT_RUNAWAY_SETTINGS,
     recoveryProtection: DEFAULT_RECOVERY_PROTECTION_SETTINGS,
+    containerEngine: DEFAULT_CONTAINER_ENGINE_SETTINGS,
   };
 }
 
@@ -185,6 +196,9 @@ export function instanceSettingsService(db: Db) {
               },
             }
           : {}),
+        containerEngine: patch.containerEngine
+          ? { ...currentNormalized.containerEngine, ...patch.containerEngine }
+          : currentNormalized.containerEngine,
       });
       const now = new Date();
       // Use a jsonb-level merge (col || $value) instead of a full column

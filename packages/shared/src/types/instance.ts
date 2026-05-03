@@ -49,6 +49,15 @@ export const DEFAULT_RECOVERY_PROTECTION_SETTINGS: RecoveryProtectionSettings = 
   continuationDailyWindowHours: 24,
 };
 
+export interface ContainerEngineSettings {
+  driver: "disabled" | "docker" | "podman";
+  networkMode: "none" | "bridge";
+  allowRootUser: boolean;
+  memoryMbMax: number;
+  maxLifetimeSecMax: number;
+  concurrencyPerPlugin: number;
+}
+
 export interface InstanceGeneralSettings {
   censorUsernameInLogs: boolean;
   keyboardShortcuts: boolean;
@@ -56,6 +65,7 @@ export interface InstanceGeneralSettings {
   backupRetention: BackupRetentionPolicy;
   runaway: RunawayDetectorSettings;
   recoveryProtection: RecoveryProtectionSettings;
+  containerEngine: ContainerEngineSettings;
 }
 
 export interface InstanceExperimentalSettings {

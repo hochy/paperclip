@@ -51,6 +51,15 @@ export const recoveryProtectionSettingsSchema = z.object({
     .default(DEFAULT_RECOVERY_PROTECTION_SETTINGS.continuationDailyWindowHours),
 });
 
+const containerEngineSettingsSchema = z.object({
+  driver: z.enum(["disabled", "docker", "podman"]).default("disabled"),
+  networkMode: z.enum(["none", "bridge"]).default("none"),
+  allowRootUser: z.boolean().default(false),
+  memoryMbMax: z.number().int().min(128).max(65536).default(4096),
+  maxLifetimeSecMax: z.number().int().min(60).max(86400).default(86400),
+  concurrencyPerPlugin: z.number().int().min(1).max(100).default(10),
+});
+
 export const instanceGeneralSettingsSchema = z.object({
   censorUsernameInLogs: z.boolean().default(false),
   keyboardShortcuts: z.boolean().default(false),
@@ -60,6 +69,7 @@ export const instanceGeneralSettingsSchema = z.object({
   backupRetention: backupRetentionPolicySchema.default(DEFAULT_BACKUP_RETENTION),
   runaway: runawayDetectorSettingsSchema.default(DEFAULT_RUNAWAY_SETTINGS),
   recoveryProtection: recoveryProtectionSettingsSchema.default(DEFAULT_RECOVERY_PROTECTION_SETTINGS),
+  containerEngine: containerEngineSettingsSchema.default({}),
   // _systemPaused* keys are managed exclusively by the pause/unpause API.
   // They live in the same jsonb column so they must be whitelisted here to
   // survive normalisation, but they are stripped from the PATCH body in the
@@ -73,9 +83,10 @@ export const patchInstanceGeneralSettingsSchema = z.object({
   censorUsernameInLogs: z.boolean().optional(),
   keyboardShortcuts: z.boolean().optional(),
   feedbackDataSharingPreference: feedbackDataSharingPreferenceSchema.optional(),
-  backupRetention: backupRetentionPolicySchema.optional(),
+  backupRetention: backupRetentionPolicySchema.partial().optional(),
   runaway: runawayDetectorSettingsSchema.partial().optional(),
   recoveryProtection: recoveryProtectionSettingsSchema.partial().optional(),
+  containerEngine: containerEngineSettingsSchema.partial().optional(),
 });
 
 export const instanceExperimentalSettingsSchema = z.object({

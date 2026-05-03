@@ -5,6 +5,7 @@ import type {
   BackupRetentionPolicy,
   RunawayDetectorSettings,
   RecoveryProtectionSettings,
+  InstanceGeneralSettings,
 } from "@paperclipai/shared";
 import {
   DAILY_RETENTION_PRESETS,
@@ -91,6 +92,14 @@ export function InstanceGeneralSettings() {
   const runaway: RunawayDetectorSettings = generalQuery.data?.runaway ?? DEFAULT_RUNAWAY_SETTINGS;
   const recoveryProtection: RecoveryProtectionSettings =
     generalQuery.data?.recoveryProtection ?? DEFAULT_RECOVERY_PROTECTION_SETTINGS;
+  const containerEngine = generalQuery.data?.containerEngine ?? {
+    driver: "disabled" as const,
+    networkMode: "none" as const,
+    allowRootUser: false,
+    memoryMbMax: 4096,
+    maxLifetimeSecMax: 86400,
+    concurrencyPerPlugin: 10,
+  };
 
   return (
     <div className="max-w-4xl space-y-6">
@@ -414,6 +423,128 @@ export function InstanceGeneralSettings() {
                 })
               }
             />
+          </div>
+        </div>
+      </section>
+
+      <section className="rounded-xl border border-border bg-card p-5">
+        <div className="space-y-5">
+          <div className="space-y-1.5">
+            <h2 className="text-sm font-semibold">Container engine</h2>
+            <p className="max-w-2xl text-sm text-muted-foreground">
+              Configure the container driver used by plugins with the{" "}
+              <code className="text-xs bg-muted px-1 py-0.5 rounded">containers.manage</code>{" "}
+              capability. Containers run on the host machine with mandatory isolation
+              defaults (no-new-privileges, dropped capabilities, non-root user).
+            </p>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium uppercase tracking-wide text-muted-foreground" htmlFor="container-driver">
+                Driver
+              </label>
+              <select
+                id="container-driver"
+                name="containerEngine.driver"
+                value={containerEngine.driver}
+                disabled={updateGeneralMutation.isPending}
+                onChange={(e) =>
+                  updateGeneralMutation.mutate({
+                    containerEngine: { driver: e.target.value as "disabled" | "docker" | "podman" },
+                  })
+                }
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <option value="disabled">Disabled</option>
+                <option value="docker">Docker</option>
+                <option value="podman">Podman</option>
+              </select>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium uppercase tracking-wide text-muted-foreground" htmlFor="container-network">
+                Network mode
+              </label>
+              <select
+                id="container-network"
+                name="containerEngine.networkMode"
+                value={containerEngine.networkMode}
+                disabled={updateGeneralMutation.isPending || containerEngine.driver === "disabled"}
+                onChange={(e) =>
+                  updateGeneralMutation.mutate({
+                    containerEngine: { networkMode: e.target.value as "none" | "bridge" },
+                  })
+                }
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <option value="none">None (no outbound)</option>
+                <option value="bridge">Bridge (outbound allowed)</option>
+              </select>
+            </div>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-3">
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium uppercase tracking-wide text-muted-foreground" htmlFor="container-memory">
+                Max memory (MB)
+              </label>
+              <input
+                id="container-memory"
+                type="number"
+                name="containerEngine.memoryMbMax"
+                min={128}
+                max={65536}
+                value={containerEngine.memoryMbMax}
+                disabled={updateGeneralMutation.isPending || containerEngine.driver === "disabled"}
+                onBlur={(e) =>
+                  updateGeneralMutation.mutate({
+                    containerEngine: { memoryMbMax: Number(e.target.value) },
+                  })
+                }
+                onChange={() => {}}
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-60"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium uppercase tracking-wide text-muted-foreground" htmlFor="container-lifetime">
+                Max lifetime (sec)
+              </label>
+              <input
+                id="container-lifetime"
+                type="number"
+                name="containerEngine.maxLifetimeSecMax"
+                min={60}
+                max={86400}
+                value={containerEngine.maxLifetimeSecMax}
+                disabled={updateGeneralMutation.isPending || containerEngine.driver === "disabled"}
+                onBlur={(e) =>
+                  updateGeneralMutation.mutate({
+                    containerEngine: { maxLifetimeSecMax: Number(e.target.value) },
+                  })
+                }
+                onChange={() => {}}
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-60"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium uppercase tracking-wide text-muted-foreground" htmlFor="container-concurrency">
+                Max per plugin
+              </label>
+              <input
+                id="container-concurrency"
+                type="number"
+                name="containerEngine.concurrencyPerPlugin"
+                min={1}
+                max={100}
+                value={containerEngine.concurrencyPerPlugin}
+                disabled={updateGeneralMutation.isPending || containerEngine.driver === "disabled"}
+                onBlur={(e) =>
+                  updateGeneralMutation.mutate({
+                    containerEngine: { concurrencyPerPlugin: Number(e.target.value) },
+                  })
+                }
+                onChange={() => {}}
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-60"
+              />
+            </div>
           </div>
         </div>
       </section>
