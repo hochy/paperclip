@@ -54,6 +54,7 @@ import { buildHostServices, flushPluginLogBuffer } from "./services/plugin-host-
 import { heartbeatService } from "./services/heartbeat.js";
 import { createPluginEventBus } from "./services/plugin-event-bus.js";
 import { setPluginEventBus } from "./services/activity-log.js";
+import { createLifecycleEventPublisher } from "./services/plugin-lifecycle-event-bridge.js";
 import { createPluginDevWatcher } from "./services/plugin-dev-watcher.js";
 import { createPluginHostServiceCleanup } from "./services/plugin-host-service-cleanup.js";
 import { pluginRegistryService } from "./services/plugin-registry.js";
@@ -81,6 +82,7 @@ const VITE_DEV_STATIC_PATHS = new Set([
   "/site.webmanifest",
   "/sw.js",
 ]);
+
 
 export function resolveViteHmrPort(serverPort: number): number {
   if (serverPort <= 55_535) {
@@ -220,7 +222,8 @@ export async function createApp(
   const eventBus = createPluginEventBus();
   setPluginEventBus(eventBus);
   const jobStore = pluginJobStore(db);
-  const lifecycle = pluginLifecycleManager(db, { workerManager });
+  const lifecycleEventPublisher = createLifecycleEventPublisher(eventBus, db);
+  const lifecycle = pluginLifecycleManager(db, { workerManager, lifecycleEventPublisher });
   const scheduler = createPluginJobScheduler({
     db,
     jobStore,
@@ -281,6 +284,7 @@ export async function createApp(
       { workerManager },
       { toolDispatcher },
       { workerManager },
+      { lifecycleEventPublisher },
     ),
   );
   api.use(adapterRoutes());
