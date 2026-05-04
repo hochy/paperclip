@@ -209,14 +209,6 @@ function buildPluginUiUrl(contribution: PluginUiContribution): string {
  */
 const shimBlobUrls: Record<string, string> = {};
 
-function applyJsxRuntimeKey(
-  props: Record<string, unknown> | null | undefined,
-  key: string | number | undefined,
-): Record<string, unknown> {
-  if (key === undefined) return props ?? {};
-  return { ...(props ?? {}), key };
-}
-
 function getShimBlobUrl(specifier: "react" | "react-dom" | "react-dom/client" | "react/jsx-runtime" | "sdk-ui"): string {
   if (shimBlobUrls[specifier]) return shimBlobUrls[specifier];
 
@@ -238,11 +230,10 @@ function getShimBlobUrl(specifier: "react" | "react-dom" | "react-dom/client" | 
       break;
     case "react/jsx-runtime":
       source = `
-        const R = globalThis.__paperclipPluginBridge__?.react;
-        const withKey = ${applyJsxRuntimeKey.toString()};
-        export const jsx = (type, props, key) => R.createElement(type, withKey(props, key));
-        export const jsxs = (type, props, key) => R.createElement(type, withKey(props, key));
-        export const Fragment = R.Fragment;
+        const JSX = globalThis.__paperclipPluginBridge__?.reactJsxRuntime;
+        export const jsx = JSX.jsx;
+        export const jsxs = JSX.jsxs;
+        export const Fragment = JSX.Fragment;
       `;
       break;
     case "react-dom":
@@ -873,5 +864,4 @@ export function _resetPluginModuleLoader(): void {
   }
 }
 
-export const _applyJsxRuntimeKeyForTests = applyJsxRuntimeKey;
 export const _rewriteBareSpecifiersForTests = rewriteBareSpecifiers;

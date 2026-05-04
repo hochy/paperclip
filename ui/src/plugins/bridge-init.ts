@@ -19,6 +19,7 @@ import {
   usePluginStream,
   usePluginToast,
 } from "./bridge.js";
+import * as ReactJsxRuntime from "react/jsx-runtime";
 
 // ---------------------------------------------------------------------------
 // Global bridge registry
@@ -33,6 +34,7 @@ import {
 export interface PluginBridgeRegistry {
   react: unknown;
   reactDom: unknown;
+  reactJsxRuntime: unknown;
   sdkUi: Record<string, unknown>;
 }
 
@@ -58,6 +60,7 @@ export function initPluginBridge(
   globalThis.__paperclipPluginBridge__ = {
     react,
     reactDom,
+    reactJsxRuntime: ReactJsxRuntime,
     sdkUi: {
       usePluginData,
       usePluginAction,
