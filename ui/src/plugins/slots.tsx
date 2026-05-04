@@ -281,7 +281,9 @@ function getShimBlobUrl(specifier: "react" | "react-dom" | "react-dom/client" | 
  * Also handles re-exports:
  * - `export { ... } from "react";`
  */
-function rewriteBareSpecifiers(source: string): string {
+const pluginModuleBlobUrls = new Map<string, Promise<string>>();
+
+async function rewriteBareSpecifiers(source: string, moduleUrl: string): Promise<string> {
   // Build a mapping of bare specifiers to blob URLs.
   const rewrites: Record<string, string> = {
     '"@paperclipai/plugin-sdk/ui"': `"${getShimBlobUrl("sdk-ui")}"`,
@@ -307,7 +309,47 @@ function rewriteBareSpecifiers(source: string): string {
     result = result.replaceAll(`import ${from}`, `import ${to}`);
   }
 
-  return result;
+  const resolveRelativeSpecifier = async (specifier: string) => {
+    if (!specifier.startsWith("./") && !specifier.startsWith("../")) return specifier;
+    const baseUrl = new URL(moduleUrl, globalThis.location?.origin ?? window.location.origin).toString();
+    return getPluginModuleBlobUrl(new URL(specifier, baseUrl).toString());
+  };
+
+  // Blob URLs are not hierarchical with the original plugin module path, so
+  // relative imports/re-exports emitted by tsc must be rewritten to the host's
+  // static plugin URL, fetched, rewritten, and imported as another blob.
+  const relativeImportPattern = /(\b(?:from|import)\s*)(["'])(\.{1,2}\/[^"']+)\2/g;
+  let rewrittenRelative = "";
+  let lastIndex = 0;
+  for (const match of result.matchAll(relativeImportPattern)) {
+    const index = match.index ?? 0;
+    const [fullMatch, prefix, quote, specifier] = match;
+    rewrittenRelative += result.slice(lastIndex, index);
+    rewrittenRelative += `${prefix}${quote}${await resolveRelativeSpecifier(specifier!)}${quote}`;
+    lastIndex = index + fullMatch.length;
+  }
+  rewrittenRelative += result.slice(lastIndex);
+
+  return rewrittenRelative;
+}
+
+async function getPluginModuleBlobUrl(url: string): Promise<string> {
+  const cached = pluginModuleBlobUrls.get(url);
+  if (cached) return cached;
+
+  const promise = (async () => {
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch plugin module: ${response.status} ${response.statusText}`);
+    }
+    const source = await response.text();
+    const rewritten = await rewriteBareSpecifiers(source, url);
+    const blob = new Blob([rewritten], { type: "application/javascript" });
+    return URL.createObjectURL(blob);
+  })();
+
+  pluginModuleBlobUrls.set(url, promise);
+  return promise;
 }
 
 /**
@@ -324,28 +366,8 @@ async function importPluginModule(url: string): Promise<Record<string, unknown>>
     return import(/* @vite-ignore */ url);
   }
 
-  // Fetch the module source text
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error(`Failed to fetch plugin module: ${response.status} ${response.statusText}`);
-  }
-
-  const source = await response.text();
-
-  // Rewrite bare specifier imports to blob URLs
-  const rewritten = rewriteBareSpecifiers(source);
-
-  // Create a blob URL from the rewritten source and import it
-  const blob = new Blob([rewritten], { type: "application/javascript" });
-  const blobUrl = URL.createObjectURL(blob);
-
-  try {
-    const mod = await import(/* @vite-ignore */ blobUrl);
-    return mod;
-  } finally {
-    // Clean up the blob URL after import (the module is already loaded)
-    URL.revokeObjectURL(blobUrl);
-  }
+  const blobUrl = await getPluginModuleBlobUrl(url);
+  return import(/* @vite-ignore */ blobUrl);
 }
 
 /**
@@ -839,6 +861,7 @@ export function PluginSlotOutlet({
 export function _resetPluginModuleLoader(): void {
   pluginLoadStates.clear();
   inflightImports.clear();
+  pluginModuleBlobUrls.clear();
   registry.clear();
   if (typeof URL.revokeObjectURL === "function") {
     for (const url of Object.values(shimBlobUrls)) {
