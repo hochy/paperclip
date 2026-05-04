@@ -75,6 +75,10 @@ const DNS_LOOKUP_TIMEOUT_MS = 5_000;
 const ALLOWED_PROTOCOLS = new Set(["http:", "https:"]);
 const TELEMETRY_EVENT_NAME_REGEX = /^[a-z0-9][a-z0-9_-]*$/;
 
+function allowPrivatePluginFetches(): boolean {
+  return process.env.PAPERCLIP_PLUGIN_FETCH_ALLOW_PRIVATE === "true";
+}
+
 /**
  * Check if an IP address is in a private/reserved range (RFC 1918, loopback,
  * link-local, etc.) that plugins should never be able to reach.
@@ -172,7 +176,9 @@ async function validateAndResolveFetchUrl(urlString: string): Promise<ValidatedF
     // Filter to only non-private IPs instead of rejecting the entire request
     // when some IPs are private. This handles multi-homed hosts that resolve
     // to both private and public addresses.
-    const safeResults = results.filter((entry) => !isPrivateIP(entry.address));
+    const safeResults = allowPrivatePluginFetches()
+      ? results
+      : results.filter((entry) => !isPrivateIP(entry.address));
     if (safeResults.length === 0) {
       throw new Error(
         `All resolved IPs for ${originalHostname} are in private/reserved ranges`,

@@ -35,7 +35,7 @@
 
 import { eq, and, desc } from "drizzle-orm";
 import type { Db } from "@paperclipai/db";
-import { companySecrets, companySecretVersions, pluginConfig } from "@paperclipai/db";
+import { companySecrets, companySecretVersions, pluginConfig, pluginConfigRuntime } from "@paperclipai/db";
 import { SECRET_PROVIDERS, type SecretProvider } from "@paperclipai/shared";
 import { getSecretProvider } from "../secrets/provider-registry.js";
 import { pluginRegistryService } from "./plugin-registry.js";
@@ -278,11 +278,16 @@ export function createPluginSecretsHandler(
       // ---------------------------------------------------------------
       const now = Date.now();
       if (!cachedAllowedRefs || now > cachedAllowedRefsExpiry) {
-        const [configRow, plugin] = await Promise.all([
+        const [configRow, runtimeConfigRow, plugin] = await Promise.all([
           db
             .select()
             .from(pluginConfig)
             .where(eq(pluginConfig.pluginId, pluginId))
+            .then((rows) => rows[0] ?? null),
+          db
+            .select()
+            .from(pluginConfigRuntime)
+            .where(eq(pluginConfigRuntime.pluginId, pluginId))
             .then((rows) => rows[0] ?? null),
           registry.getById(pluginId),
         ]);
@@ -290,6 +295,9 @@ export function createPluginSecretsHandler(
         const schema = (plugin?.manifestJson as unknown as Record<string, unknown> | null)
           ?.instanceConfigSchema as Record<string, unknown> | undefined;
         cachedAllowedRefs = extractSecretRefsFromConfig(configRow?.configJson, schema);
+        for (const ref of extractSecretRefsFromConfig(runtimeConfigRow?.configJson, schema)) {
+          cachedAllowedRefs.add(ref);
+        }
         cachedAllowedRefsExpiry = now + CONFIG_CACHE_TTL_MS;
       }
 
