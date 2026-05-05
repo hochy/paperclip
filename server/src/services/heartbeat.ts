@@ -6599,6 +6599,9 @@ export function heartbeatService(db: Db, options: HeartbeatServiceOptions = {}) 
       issueRef?.executionWorkspacePreference === "reuse_existing" &&
       existingExecutionWorkspace !== null &&
       existingExecutionWorkspace.status !== "archived";
+    const reusableExecutionWorkspaceConfig = shouldReuseExisting
+      ? existingExecutionWorkspace?.config ?? null
+      : null;
     const persistedExecutionWorkspaceMode = shouldReuseExisting && existingExecutionWorkspace
       ? issueExecutionWorkspaceModeForPersistedWorkspace(existingExecutionWorkspace.mode)
       : null;
@@ -6612,7 +6615,7 @@ export function heartbeatService(db: Db, options: HeartbeatServiceOptions = {}) 
     const selectedEnvironmentId = resolveExecutionWorkspaceEnvironmentId({
       projectPolicy: projectExecutionWorkspacePolicy,
       issueSettings: issueExecutionWorkspaceSettings,
-      workspaceConfig: existingExecutionWorkspace?.config ?? null,
+      workspaceConfig: reusableExecutionWorkspaceConfig,
       agentDefaultEnvironmentId: agent.defaultEnvironmentId,
       defaultEnvironmentId: defaultEnvironment.id,
     });
@@ -6627,7 +6630,7 @@ export function heartbeatService(db: Db, options: HeartbeatServiceOptions = {}) 
         });
     const persistedWorkspaceManagedConfig = applyPersistedExecutionWorkspaceConfig({
       config: workspaceManagedConfig,
-      workspaceConfig: existingExecutionWorkspace?.config ?? null,
+      workspaceConfig: reusableExecutionWorkspaceConfig,
       mode: effectiveExecutionWorkspaceMode,
     });
     let adapterModelProfiles: AdapterModelProfileDefinition[] = [];
@@ -7260,6 +7263,7 @@ export function heartbeatService(db: Db, options: HeartbeatServiceOptions = {}) 
         runtime: runtimeForAdapter,
         config: runtimeConfig,
         context,
+        runtimeCommandSpec: adapter.getRuntimeCommandSpec?.(runtimeConfig) ?? null,
         executionTarget,
         executionTransport: remoteExecution
           ? { remoteExecution: remoteExecution as unknown as Record<string, unknown> }
