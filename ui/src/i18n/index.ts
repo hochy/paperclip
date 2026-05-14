@@ -1,25 +1,24 @@
-import { DEFAULT_LOCALE, localeMessages } from "./locales";
+import i18n, { type InitOptions, type TOptions } from "i18next";
+import { initReactI18next, useTranslation as useReactI18nextTranslation } from "react-i18next";
 
-type TranslationOptions = {
-  defaultValue?: string;
+import { DEFAULT_LOCALE, i18nextResources, supportedLocales } from "./locales";
+
+const i18nextOptions: InitOptions = {
+  resources: i18nextResources,
+  lng: DEFAULT_LOCALE,
+  fallbackLng: DEFAULT_LOCALE,
+  supportedLngs: supportedLocales,
+  defaultNS: "translation",
+  interpolation: { escapeValue: false },
+  returnObjects: false,
+  initAsync: false,
 };
 
-function resolveLocaleValue(key: string) {
-  const path = key.split(".");
-  let value: unknown = localeMessages[DEFAULT_LOCALE];
+i18n.use(initReactI18next).init(i18nextOptions);
 
-  for (const segment of path) {
-    if (!value || typeof value !== "object" || Array.isArray(value)) return null;
-    value = (value as Record<string, unknown>)[segment];
-  }
-
-  return typeof value === "string" ? value : null;
+export function t(key: string, options: TOptions = {}) {
+  return i18n.t(key, options);
 }
 
-export function t(key: string, options: TranslationOptions = {}) {
-  return resolveLocaleValue(key) ?? options.defaultValue ?? key;
-}
-
-export function useTranslation() {
-  return { t };
-}
+export const useTranslation = useReactI18nextTranslation;
+export { i18n };
