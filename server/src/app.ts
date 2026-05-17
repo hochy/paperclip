@@ -294,6 +294,8 @@ export async function createApp(
       instanceInfo: {
         instanceId: opts.instanceId ?? "default",
         hostVersion: opts.hostVersion ?? "0.0.0",
+        deploymentMode: opts.deploymentMode,
+        deploymentExposure: opts.deploymentExposure,
       },
       buildHostHandlers: (pluginId, manifest) => {
         const notifyWorker = (method: string, params: unknown) => {
@@ -303,6 +305,7 @@ export async function createApp(
         const baseServices = buildHostServices(db, pluginId, manifest.id, eventBus, notifyWorker, {
           pluginWorkerManager: workerManager,
           containerService: containerService ?? undefined,
+          manifest,
         });
         hostServicesDisposers.set(pluginId, () => baseServices.dispose());
         const services = {
@@ -472,12 +475,10 @@ export async function createApp(
   void toolDispatcher.initialize().catch((err) => {
     logger.error({ err }, "Failed to initialize plugin tool dispatcher");
   });
-  const devWatcher = opts.uiMode === "vite-dev"
-    ? createPluginDevWatcher(
-      lifecycle,
-      async (pluginId) => (await pluginRegistry.getById(pluginId))?.packagePath ?? null,
-    )
-    : null;
+  const devWatcher = createPluginDevWatcher(
+    lifecycle,
+    async (pluginId) => (await pluginRegistry.getById(pluginId))?.packagePath ?? null,
+  );
   void loader.loadAll().then((result) => {
     if (!result) return;
     for (const loaded of result.results) {

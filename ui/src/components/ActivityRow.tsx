@@ -1,5 +1,6 @@
 import { Link } from "@/lib/router";
-import { Identity } from "./Identity";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { deriveInitials } from "./Identity";
 import { IssueReferenceActivitySummary } from "./IssueReferenceActivitySummary";
 import { timeAgo } from "../lib/timeAgo";
 import { cn } from "../lib/utils";
@@ -57,8 +58,8 @@ export function ActivityRow({ event, agentMap, userProfileMap, entityNameMap, en
 
   const inner = (
     <div className="space-y-2">
-      <div className="flex gap-3">
-        <p className="flex-1 min-w-0 truncate">
+      <div className="flex items-center gap-3">
+        <div className="flex min-w-0 flex-1 items-center gap-2">
           {isSystem ? (
             <span
               className="inline-flex gap-1 items-center text-muted-foreground align-middle"
@@ -69,18 +70,19 @@ export function ActivityRow({ event, agentMap, userProfileMap, entityNameMap, en
               <span className="text-sm">System</span>
             </span>
           ) : (
-            <Identity
-              name={actorName}
-              avatarUrl={actorAvatarUrl}
-              size="xs"
-              className="align-middle"
-            />
+            <Avatar size="xs">
+              {actorAvatarUrl && <AvatarImage src={actorAvatarUrl} alt={actorName} />}
+              <AvatarFallback>{deriveInitials(actorName)}</AvatarFallback>
+            </Avatar>
           )}
-          <span className="text-muted-foreground ml-1">{verb} </span>
-          {name && <span className="font-medium">{name}</span>}
-          {entityTitle && <span className="text-muted-foreground ml-1">— {entityTitle}</span>}
-        </p>
-        <span className="text-xs text-muted-foreground shrink-0 pt-0.5">{timeAgo(event.createdAt)}</span>
+          <p className="min-w-0 flex-1 truncate">
+            {!isSystem && <span>{actorName}</span>}
+            <span className="text-muted-foreground"> {verb} </span>
+            {name && <span className="font-medium">{name}</span>}
+            {entityTitle && <span className="text-muted-foreground"> — {entityTitle}</span>}
+          </p>
+        </div>
+        <span className="text-xs text-muted-foreground shrink-0">{timeAgo(event.createdAt)}</span>
       </div>
       <IssueReferenceActivitySummary event={event} />
     </div>
